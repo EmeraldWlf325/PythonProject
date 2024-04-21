@@ -1,1 +1,1 @@
-{'': {'Part Number': '', 'Count': '', 'Description': ''}}
+{<tkinter.Label object .!label9>: {'Part Number': <tkinter.Label object .!label10>, 'Count': <tkinter.Label object .!label11>, 'Description': <tkinter.Label object .!label12>}}
