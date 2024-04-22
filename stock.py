@@ -4,26 +4,33 @@ from PIL import ImageTk, Image
 
 chosenFile = 'test.txt'
 
+#this reads the file for the seed stock and returns it
+def ReadSeedStock():
+    file = open(chosenFile, 'rb')
+    seed = file.read()
+    return eval(seed)
+
 #this is for both start new seed stock and add seed stock, status deterimines what is what
 def AddSeedStock(invID, newPN, newCount, newDesc, status = "add"):
     if status == "add":
-        file = open(chosenFile, 'rb')
-        seed = file.read()
-        seedStock = eval(seed)
+        seedStock = ReadSeedStock()
 
     inventory = {}
-    seedStock = {}
     inventory["Part Number"] = newPN
     inventory["Count"] = newCount
     inventory["Description"] = newDesc
-    seedStock[invID] = inventory
+    if status == "new":
+        seedStock = {}
+        seedStock[invID] = inventory
 
     if status == "add":
-        seedStock.update(seedStock)
+        newSeedStock = {}
+        newSeedStock[invID] = inventory
+        seedStock.update(newSeedStock)
 
     with open(chosenFile, 'w') as fp:
         fp.write(str(seedStock))
-  
+
 
 def Menu():
     print("\nMenu: \n1: Start New Seed Stock \n2: Add Seed Stock \n3: Get Seed Stock")
@@ -199,14 +206,70 @@ def make_window():
         back_button.place(anchor=N, x=200, y=cur_y)
     
     def getSeedStockMenu():
+        seedStock = ReadSeedStock()
+
         clearWindow() #clears the window to add more stuff
         
-        title_label = tk.Label(root, text="Test", font=("Arial", 10))
+        title_label = tk.Label(root, text="Currently reading " + chosenFile, font=("Arial", 10))
         back_button = Button(root, text ="Back to menu", command = mainMenu)
+
         
-        #adds more stuff
-        title_label.pack(pady=10)
-        back_button.pack(pady=10)
+        cataNames = list(seedStock.keys())
+
+        invID = tk.Label(root, text="ID: ", font=("Arial", 10))
+        #The options menu
+        option_var = tk.StringVar(value=cataNames[0]) 
+        l1 = tk.OptionMenu(root, option_var, *cataNames) 
+        
+        #newPN = input("Please enter the Part Number: ")
+        newPN = tk.Label(root, text="Part Number: ", font=("Arial", 10))
+        l2 = tk.Label(root, text="", font=("Arial", 10))
+        
+        #newCount = input("What is the count for this part? ")
+        newCount = tk.Label(root, text="Count: ", font=("Arial", 10))
+        l3 = tk.Label(root, text="", font=("Arial", 10))
+        
+        #newDesc = input("Please enter the part description: ")
+        newDesc = tk.Label(root, text="Description: ", font=("Arial", 10))
+        l4 = tk.Label(root, text="", font=("Arial", 10))
+
+        cur_y = 0
+        x_pos = [150, 250]
+        #places stuff down
+        title_label.place(anchor=N, x=200, y=cur_y)
+        cur_y += 35
+        
+        invID.place(anchor=N, x=x_pos[0], y=cur_y)
+        l1.place(anchor=N, x=x_pos[1], y=cur_y)
+        cur_y += 35
+
+        newPN.place(anchor=N, x=x_pos[0], y=cur_y)
+        l2.place(anchor=N, x=x_pos[1], y=cur_y)
+        cur_y += 35
+
+        newCount.place(anchor=N, x=x_pos[0], y=cur_y)
+        l3.place(anchor=N, x=x_pos[1], y=cur_y)
+        cur_y += 35
+
+        newDesc.place(anchor=N, x=x_pos[0], y=cur_y)
+        l4.place(anchor=N, x=x_pos[1], y=cur_y)
+        cur_y += 35
+        
+        back_button.place(anchor=N, x=200, y=cur_y)
+
+        #This is what the menu does when an option is changed
+        def reset_labels(*args):
+            #this gets the index of the new option, as well as getting the chosen dicitonary
+            new_name = option_var.get()
+            chosen_dic = seedStock[new_name]
+
+            l2.config(text = chosen_dic["Part Number"])
+            l3.config(text = chosen_dic["Count"])
+            l4.config(text = chosen_dic["Description"])
+        
+        #This detects if the option has changed
+        option_var.trace("w", reset_labels)
+        reset_labels()
     
 
 
