@@ -3,17 +3,18 @@ from tkinter import *
 from PIL import ImageTk, Image
 
 chosenFile = 'test.txt'
+chosenStock = 'currentStock.txt'
 
 #this reads the file for the seed stock and returns it
-def ReadSeedStock():
-    file = open(chosenFile, 'rb')
+def ReadSeedStock(toRead):
+    file = open(toRead, 'rb')
     seed = file.read()
     return eval(seed)
 
 #this is for both start new seed stock and add seed stock, status deterimines what is what
 def AddSeedStock(invID, newPN, newCount, newDesc, status = "add"):
     if status == "add":
-        seedStock = ReadSeedStock()
+        seedStock = ReadSeedStock(chosenFile)
 
     inventory = {}
     inventory["Part Number"] = newPN
@@ -31,9 +32,42 @@ def AddSeedStock(invID, newPN, newCount, newDesc, status = "add"):
     with open(chosenFile, 'w') as fp:
         fp.write(str(seedStock))
 
+#uses up inventory 
+def UseInventory(PN, count):
+    seedStock = ReadSeedStock(chosenStock)
+
+    seedCount = seedStock[PN]["Count"]
+
+    if count <= seedCount:
+        newCount = int(seedCount) - int(count)
+        seedStock[PN]["Count"] = newCount
+        with open(chosenStock, 'w') as fp:
+            fp.write(str(seedStock))
+        return True
+    else:
+        return False
+
+#replenishes stock
+def ReplenishStock(invID, count):
+    currentStock = ReadSeedStock(chosenStock)
+    seedStock = ReadSeedStock(chosenFile)
+    
+    seedCount = int(seedStock[invID]["Count"])
+    currentCount = currentStock[invID]["Count"]
+
+    updatedCount = int(count) + int(currentCount)
+    if updatedCount <= seedCount:
+        currentStock[invID]["Count"] = updatedCount
+        with open(chosenStock, 'w') as fp:
+            fp.write(str(currentStock))
+        return True
+    else:
+        return False
+
 
 def Menu():
     print("\nMenu: \n1: Start New Seed Stock \n2: Add Seed Stock \n3: Get Seed Stock")
+    print("4: Use Inventory \n5: Replenish Stock \n6: Get Current Stock")
     selection = input("\nPlease select an option: ")
 
     if(selection == '1'):
@@ -43,7 +77,6 @@ def Menu():
         newDesc = input("Please enter the part description: ")
 
         AddSeedStock(invID, newPN, newCount, newDesc, "new")
-
             
     elif(selection == '2'):
 
@@ -57,16 +90,38 @@ def Menu():
         Menu()
     
     elif(selection == '3'):
-        with open(chosenFile, 'rb') as handle:
-            seed = handle.read()
-            seedStock = eval(seed)
-            print(seedStock)
-
-            
+        print(ReadSeedStock(chosenFile))    
             
         Menu()
+    
+    elif(selection == '4'):
+            
+        PN = input("Please enter the inventory ID you would like to use. 'format: 000' ")
+        count = input("How many of this part would you like to use? ")
+
+        if not UseInventory(PN, count):
+            print("Not enough parts on hand. Please try again")
+
+        Menu()
+
+    elif(selection == '5'):
+        invID = input("Please enter the inventory ID for the part you would like to replenish. 'format: 000' ")
+        count = input("How many parts are you replenishing? ")
+        
+        if not ReplenishStock(invID, count):
+            print("Too many parts for your location. Please check the destination adress and try again!")
+
+        Menu()
+
+    elif(selection == '6'):
+        currentStock = ReadSeedStock(chosenStock)
+        print(currentStock)
+
+        Menu()
+
     else:
         print("\nThank you for using this program!")
+
 
 def make_window():
     #Creates the main window
@@ -86,12 +141,19 @@ def make_window():
         B1 = Button(root, text ="Start New Seed Stock", command = newSeedStockMenu)
         B2 = Button(root, text ="Add Seed Stock", command = addSeedStockMenu)
         B3 = Button(root, text ="Get Seed Stock", command = getSeedStockMenu)
+        B4 = Button(root, text ="Use Inventory", command = useInventoryMenu)
+        B5 = Button(root, text ="Replenish Stock", command = replenishStockMenu)
+        #B6 = Button(root, text ="Get Current Stock", command = getCurrentStockMenu)
+
 
         #puts all of the elements on the window in order
-        title_label.pack(pady=10)
-        B1.pack(pady=10)
-        B2.pack(pady=10)
-        B3.pack(pady=10)
+        title_label.pack(pady=4)
+        B1.pack(pady=4)
+        B2.pack(pady=4)
+        B3.pack(pady=4)
+        B4.pack(pady=4)
+        B5.pack(pady=4)
+        #B6.pack(pady=4)
     
     def newSeedStockMenu():
         clearWindow() #clears the window to add more stuff
@@ -206,7 +268,7 @@ def make_window():
         back_button.place(anchor=N, x=200, y=cur_y)
     
     def getSeedStockMenu():
-        seedStock = ReadSeedStock()
+        seedStock = ReadSeedStock(chosenFile)
 
         clearWindow() #clears the window to add more stuff
         
@@ -271,8 +333,84 @@ def make_window():
         option_var.trace("w", reset_labels)
         reset_labels()
     
+    def useInventoryMenu():
+        clearWindow() #clears the window to add more stuff
 
+        title_label = tk.Label(root, text="Currently taking from " + chosenStock, font=("Arial", 10))
 
+        #executes the command UseInventory with the entry values
+        def doTheThing():
+            if UseInventory(e1.get(), int(e2.get())):
+                title_label.config(text="Done!")
+            else:
+                title_label.config(text="Not enough parts on hand. Please try again")
+
+        #PN = input("Please enter the inventory ID you would like to use. 'format: 000' ")
+        PN = tk.Label(root, text="(Format '000') Inventory ID: ", font=("Arial", 10))
+        e1 = Entry(root)
+        
+        #count = input("How many of this part would you like to use? ")
+        count = tk.Label(root, text="How many to use: ", font=("Arial", 10))
+        e2 = Entry(root)
+
+        cur_y = 0
+        x_pos = [150, 250]
+        #places stuff down
+        title_label.place(anchor=N, x=200, y=cur_y)
+        cur_y += 35
+        PN.place(anchor=N, x=x_pos[0]-50, y=cur_y)
+        e1.place(anchor=N, x=x_pos[1], y=cur_y)
+        cur_y += 35
+        count.place(anchor=N, x=x_pos[0]-50, y=cur_y)
+        e2.place(anchor=N, x=x_pos[1], y=cur_y)
+        cur_y += 35
+        
+        #buttons for adding and canceling
+        add_button = Button(root, text ="Use Inventory", command = doTheThing)
+        back_button = Button(root, text ="Back to menu", command = mainMenu)
+        add_button.place(anchor=N, x=200, y=cur_y)
+        cur_y += 35
+        back_button.place(anchor=N, x=200, y=cur_y)
+
+    def replenishStockMenu():
+        clearWindow() #clears the window to add more stuff
+
+        title_label = tk.Label(root, text="Currently taking from " + chosenFile + " to replenish " + chosenStock, font=("Arial", 10))
+
+        #executes the command UseInventory with the entry values
+        def doTheThing():
+            if UseInventory(e1.get(), int(e2.get())):
+                title_label.config(text="Done!")
+            else:
+                title_label.config(text="Too many parts for your location. Please check the destination adress and try again!")
+
+        #invID = input("Please enter the inventory ID for the part you would like to replenish. 'format: 000' ")
+        invID = tk.Label(root, text="(Format '000') Inventory ID: ", font=("Arial", 10))
+        e1 = Entry(root)
+        
+        #count = input("How many parts are you replenishing? ")
+        count = tk.Label(root, text="How many to replenish: ", font=("Arial", 10))
+        e2 = Entry(root)
+
+        cur_y = 0
+        x_pos = [150, 250]
+        #places stuff down
+        title_label.place(anchor=N, x=200, y=cur_y)
+        cur_y += 35
+        invID.place(anchor=N, x=x_pos[0]-50, y=cur_y)
+        e1.place(anchor=N, x=x_pos[1], y=cur_y)
+        cur_y += 35
+        count.place(anchor=N, x=x_pos[0]-50, y=cur_y)
+        e2.place(anchor=N, x=x_pos[1], y=cur_y)
+        cur_y += 35
+        
+        #buttons for adding and canceling
+        add_button = Button(root, text ="Use Inventory", command = doTheThing)
+        back_button = Button(root, text ="Back to menu", command = mainMenu)
+        add_button.place(anchor=N, x=200, y=cur_y)
+        cur_y += 35
+        back_button.place(anchor=N, x=200, y=cur_y)
+    
     mainMenu()
 
     #Shows the window
